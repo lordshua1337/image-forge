@@ -36,6 +36,7 @@ function EditorPage() {
   const router = useRouter()
   const templateId = searchParams.get('template')
   const creationId = searchParams.get('id')
+  const source = searchParams.get('source')
 
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -52,7 +53,7 @@ function EditorPage() {
   const [uploadTargetLayerId, setUploadTargetLayerId] = useState<string | null>(null)
   const [brandKit, setBrandKit] = useState<BrandKit | null>(null)
 
-  // Load template or existing creation
+  // Load template, creation, or generated image
   useEffect(() => {
     if (creationId) {
       const creation = getCreation(creationId)
@@ -65,6 +66,87 @@ function EditorPage() {
         return
       }
     }
+
+    // Load generated image from AI Generate page
+    if (source === 'generate') {
+      const imgUrl = sessionStorage.getItem('imageforge-generated-image')
+      const imgPrompt = sessionStorage.getItem('imageforge-generated-prompt') ?? 'AI Generated'
+      const imgAspect = sessionStorage.getItem('imageforge-generated-aspect') ?? '1:1'
+
+      if (imgUrl) {
+        const [wRatio, hRatio] = imgAspect.split(':').map(Number)
+        const baseSize = 1080
+        const w = wRatio >= hRatio ? baseSize : Math.round(baseSize * (wRatio / hRatio))
+        const h = hRatio >= wRatio ? baseSize : Math.round(baseSize * (hRatio / wRatio))
+
+        setCanvasWidth(w)
+        setCanvasHeight(h)
+        setTitle(imgPrompt.slice(0, 40))
+
+        const bgLayer: TemplateLayer = {
+          id: 'bg',
+          type: 'shape',
+          bounds: { x: 0, y: 0, width: w, height: h },
+          zIndex: 0,
+          locked: false,
+          shapeType: 'rect',
+          shapeColor: '#000000',
+        }
+        const imgLayer: TemplateLayer = {
+          id: 'generated-img',
+          type: 'image',
+          bounds: { x: 0, y: 0, width: w, height: h },
+          zIndex: 1,
+          locked: false,
+          imageScaleMode: 'cover',
+        }
+        const headlineLayer: TemplateLayer = {
+          id: 'headline',
+          type: 'text',
+          bounds: { x: 40, y: h - 160, width: w - 80, height: 100 },
+          zIndex: 2,
+          locked: false,
+          textContent: 'Your Text Here',
+          textStyle: {
+            fontSize: 48,
+            fontFamily: 'Inter',
+            fontWeight: 'bold',
+            color: '#ffffff',
+            textAlign: 'center',
+            lineHeight: 1.2,
+            letterSpacing: -1,
+          },
+          textAuto: {
+            sizeToFit: true,
+            minFontSize: 24,
+            maxFontSize: 56,
+            verticalAlign: 'middle',
+          },
+        }
+
+        setLayers([bgLayer, imgLayer, headlineLayer])
+
+        // Load the generated image as an asset
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          setAssets((prev) => ({ ...prev, 'generated-img': img }))
+        }
+        img.src = imgUrl
+
+        // Clean up sessionStorage
+        sessionStorage.removeItem('imageforge-generated-image')
+        sessionStorage.removeItem('imageforge-generated-prompt')
+        sessionStorage.removeItem('imageforge-generated-aspect')
+
+        // Load brand kit and return early
+        const appState = loadState()
+        const kit = appState.brandKits.find((k) => k.isDefault) ?? appState.brandKits[0]
+        if (kit) setBrandKit(kit)
+        return
+      }
+    }
+
     if (templateId) {
       const template = getTemplateById(templateId)
       if (template) {
@@ -76,10 +158,10 @@ function EditorPage() {
     }
 
     // Load default brand kit
-    const state = loadState()
-    const defaultKit = state.brandKits.find((k) => k.isDefault) ?? state.brandKits[0]
+    const appState = loadState()
+    const defaultKit = appState.brandKits.find((k) => k.isDefault) ?? appState.brandKits[0]
     if (defaultKit) setBrandKit(defaultKit)
-  }, [templateId, creationId])
+  }, [templateId, creationId, source])
 
   // Render canvas whenever layers or assets change
   useEffect(() => {

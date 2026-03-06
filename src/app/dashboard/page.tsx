@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { TEMPLATES, getPlatforms } from '@/lib/templates'
+import { renderToCanvas } from '@/lib/canvas/renderer'
 
 export default function TemplatesPage() {
   const platforms = getPlatforms()
@@ -104,18 +105,24 @@ export default function TemplatesPage() {
 }
 
 function TemplatePreview({ template }: { template: typeof TEMPLATES[number] }) {
-  const bgLayer = template.layerConfig.find((l) => l.id === 'bg')
-  const bgColor = bgLayer?.shapeColor ?? '#1a1a2e'
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    renderToCanvas(canvas, {
+      layers: template.layerConfig,
+      width: template.widthPx,
+      height: template.heightPx,
+    })
+  }, [template])
 
   return (
-    <div
-      className="w-full h-full flex items-center justify-center"
-      style={{ background: bgColor }}
-    >
-      <div className="text-center p-4">
-        <p className="text-sm font-bold text-white/80">{template.purpose}</p>
-        <p className="text-[10px] text-white/40 mt-1">{template.widthPx}x{template.heightPx}</p>
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="w-full h-full object-contain"
+      style={{ imageRendering: 'auto' }}
+    />
   )
 }

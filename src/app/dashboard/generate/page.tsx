@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useCallback, useEffect } from 'react'
-import { Wand2, Sparkles, Download, Loader2, AlertCircle, Image as ImageIcon } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Wand2, Sparkles, Download, Loader2, AlertCircle, Image as ImageIcon, Paintbrush } from 'lucide-react'
 
 const ASPECT_RATIOS = [
   { value: '1:1', label: 'Square', desc: 'Instagram Post' },
@@ -28,6 +29,7 @@ const DEMO_IMAGES = [
 type GenerateState = 'idle' | 'generating' | 'done' | 'error'
 
 export default function GeneratePage() {
+  const router = useRouter()
   const [prompt, setPrompt] = useState('')
   const [aspectRatio, setAspectRatio] = useState('1:1')
   const [state, setState] = useState<GenerateState>('idle')
@@ -90,6 +92,15 @@ export default function GeneratePage() {
     a.download = `imageforge-${Date.now()}.webp`
     a.click()
   }, [imageUrl])
+
+  const handleEditInCanvas = useCallback(() => {
+    if (!imageUrl) return
+    // Store the generated image in sessionStorage so the editor can load it
+    sessionStorage.setItem('imageforge-generated-image', imageUrl)
+    sessionStorage.setItem('imageforge-generated-prompt', prompt)
+    sessionStorage.setItem('imageforge-generated-aspect', aspectRatio)
+    router.push('/dashboard/editor?source=generate')
+  }, [imageUrl, prompt, aspectRatio, router])
 
   return (
     <div className="max-w-4xl mx-auto px-6 py-8">
@@ -262,23 +273,33 @@ export default function GeneratePage() {
 
           {/* Actions */}
           {imageUrl && state === 'done' && (
-            <div className="flex gap-3 mt-4">
+            <div className="space-y-3 mt-4">
               <button
-                onClick={handleDownload}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
-                style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
-              >
-                <Download size={14} />
-                Download
-              </button>
-              <button
-                onClick={() => { setState('idle'); setImageUrl(null) }}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-all hover:scale-[1.02]"
+                onClick={handleEditInCanvas}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-bold text-white transition-all hover:scale-[1.02]"
                 style={{ background: 'var(--gradient-primary)' }}
               >
-                <Sparkles size={14} />
-                Generate Another
+                <Paintbrush size={14} />
+                Edit in Canvas
               </button>
+              <div className="flex gap-3">
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <Download size={14} />
+                  Download
+                </button>
+                <button
+                  onClick={() => { setState('idle'); setImageUrl(null) }}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}
+                >
+                  <Sparkles size={14} />
+                  Generate Another
+                </button>
+              </div>
             </div>
           )}
         </div>
