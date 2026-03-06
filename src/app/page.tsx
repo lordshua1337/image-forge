@@ -111,11 +111,12 @@ export default function LandingPage() {
             <ArrowRight size={16} />
           </Link>
           <Link
-            href="/dashboard/templates"
-            className="px-6 py-3 rounded-lg text-sm font-medium transition-all"
-            style={{ background: 'var(--surface)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            href="/dashboard/generate"
+            className="flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-medium transition-all hover:scale-105"
+            style={{ background: 'var(--surface)', border: '1px solid var(--purple)', color: 'var(--purple)' }}
           >
-            Browse Templates
+            <Sparkles size={14} />
+            Generate with AI
           </Link>
         </div>
       </section>

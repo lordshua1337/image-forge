@@ -2,10 +2,11 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Sparkles, Layers, Palette, FolderOpen } from 'lucide-react'
+import { Sparkles, Layers, Palette, FolderOpen, Wand2 } from 'lucide-react'
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Templates', icon: Layers },
+  { href: '/dashboard/generate', label: 'Generate', icon: Wand2 },
   { href: '/dashboard/brand', label: 'Brand Kit', icon: Palette },
   { href: '/dashboard/library', label: 'Library', icon: FolderOpen },
 ]
